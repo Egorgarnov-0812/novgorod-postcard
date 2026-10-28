@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
+<title>Veliky Novgorod Photo Bingo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ruslan+Display&family=Alegreya:ital,wght@0,400;0,700;1,400&family=Alegreya+SC:wght@700&family=PT+Sans+Narrow:wght@400;700&family=Caveat:wght@500;700&display=swap">
+<style>
+/* Layout: one landscape card drawn on canvas (what you see is what you save),
+   controls and an accessible quest list beneath. Card palette: birch bark, iron-gall ink,
+   icon cinnabar, Sophia gold, lead-seal grey, Volkhov blue. */
+:root {
+  --bg: #E7E3DA;
+  --panel: #F5F2EB;
+  --ink: #241E19;
+  --muted: #6B6158;
+  --line: #CDC5B7;
+  --cinnabar: #B3301B;
+  --display: "Ruslan Display", "Times New Roman", serif;
+  --body: "Alegreya", Georgia, serif;
+  --label: "PT Sans Narrow", "Arial Narrow", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15120F; --panel: #201B17; --ink: #EDE6DA; --muted: #A99D8F; --line: #3A322B; --cinnabar: #E0573E; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15120F; --panel: #201B17; --ink: #EDE6DA; --muted: #A99D8F; --line: #3A322B; --cinnabar: #E0573E; color-scheme: dark }
+
+* { box-sizing: border-box }
+[hidden] { display: none !important }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; padding: 20px 16px 48px }
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px }
+.stage { box-shadow: 0 10px 30px rgba(0,0,0,.18); line-height: 0 }
+#card, #back { width: 100%; height: auto; aspect-ratio: 8 / 5; max-width: 100%; display: block; cursor: pointer; background: #F1ECE2 }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap }
+.tabs button { font: 700 15px var(--label); letter-spacing: .08em; text-transform: uppercase; padding: 10px 16px; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 3px; cursor: pointer }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink) }
+.back-fields { flex: 1; min-width: 0 }
+.fields label.wide { flex-basis: 100% }
+.fields textarea { font: 17px/1.4 var(--body); color: var(--ink); background: transparent; border: 1.5px solid var(--line); border-radius: 3px; padding: 8px; width: 100%; resize: vertical }
+.fields textarea:focus { outline: none; border-color: var(--cinnabar) }
+.dl { display: flex; justify-content: center }
+.dl .primary { padding: 15px 34px; font-size: 18px }
+
+.controls { display: flex; flex-wrap: wrap; gap: 16px 28px; align-items: flex-end; justify-content: space-between; background: var(--panel); border: 1px solid var(--line); padding: 18px 20px; border-radius: 3px }
+.fields { display: flex; flex-wrap: wrap; gap: 14px 24px }
+.fields label { display: flex; flex-direction: column; gap: 4px; font-family: var(--label); font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted) }
+.fields input { font: 18px var(--body); color: var(--ink); background: transparent; border: none; border-bottom: 1.5px solid var(--line); padding: 4px 2px; width: 220px; max-width: 100% }
+.fields input:focus { outline: none; border-color: var(--cinnabar) }
+.btns { display: flex; flex-wrap: wrap; gap: 10px }
+button.primary { font: 700 16px var(--label); letter-spacing: .1em; text-transform: uppercase; background: var(--cinnabar); color: #fff; border: none; border-radius: 3px; padding: 12px 22px; cursor: pointer }
+button.ghost { font: 15px var(--label); letter-spacing: .06em; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; padding: 9px 14px; cursor: pointer }
+button:focus-visible { outline: 2px solid var(--cinnabar); outline-offset: 2px }
+button:disabled { opacity: .6 }
+
+h2 { font-family: var(--label); font-size: 14px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin: 6px 0 0; font-weight: 700 }
+.tasks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 8px }
+.tasks li { display: flex; align-items: center; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; min-width: 0 }
+.tasks .n { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--cinnabar); color: #fff; font: 700 14px/26px var(--label); text-align: center }
+.tasks .t { flex: 1; min-width: 0; font-weight: 700; font-size: 15.5px }
+.tasks .t small { display: block; font-weight: 400; color: var(--muted); font-size: 13px }
+.tasks li.done .t small::before { content: "✓ "; color: var(--cinnabar) }
+.tasks button { flex: none; font: 13px var(--label); letter-spacing: .05em; padding: 6px 9px }
+.note { color: var(--muted); font-size: 13.5px; margin: 0; line-height: 1.45 }
+
+.overlay { position: fixed; inset: 0; background: rgba(12,10,8,.84); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10 }
+.sheet { background: var(--panel); border-radius: 4px; padding: 18px; max-width: 900px; width: 100%; max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 12px }
+.sheet img { width: 100% }
+.sheet p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.4 }
+.sheet .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end }
+
+/* print-file mode: only the card, edge to edge */
+html.export body { padding: 0; background: #F1ECE2 }
+html.export .wrap { max-width: none; gap: 0 }
+html.export .wrap > :not(.stage) { display: none !important }
+html.export .stage { box-shadow: none }
+html.export #card, html.export #back { width: 100vw; height: 100vh }
+html.export .tabs { display: none }
+</style>
+
+<div class="wrap">
+  <div class="tabs" role="tablist" aria-label="Postcard side">
+    <button type="button" role="tab" id="tab-front" aria-selected="true">Front</button>
+    <button type="button" role="tab" id="tab-back" aria-selected="false">Back</button>
+  </div>
+  <div class="stage" id="stage-front"><canvas id="card" width="2400" height="1500" role="img" aria-label="Front of the postcard: Veliky Novgorod photo bingo"></canvas></div>
+  <div class="stage" id="stage-back" hidden><canvas id="back" width="2400" height="1500" role="img" aria-label="Back of the postcard: message, address and stamp"></canvas></div>
+  <div class="dl"><button class="primary" id="b-dl" type="button">Download PDF</button></div>
+
+  <div class="controls">
+    <div class="fields">
+      <label for="f-name">Explorer<input id="f-name" type="text" placeholder="Your name" maxlength="22" autocomplete="off"></label>
+      <label for="f-date">Date<input id="f-date" type="text" placeholder="Oct 25, 2026" maxlength="16" autocomplete="off"></label>
+      <label for="f-to">To<input id="f-to" type="text" placeholder="Name" maxlength="30" autocomplete="off"></label>
+      <label for="f-addr">Address<input id="f-addr" type="text" placeholder="Street" maxlength="34" autocomplete="off"></label>
+      <label for="f-city">City &amp; country<input id="f-city" type="text" placeholder="City, country" maxlength="34" autocomplete="off"></label>
+      <label for="f-msg" class="wide">Message<textarea id="f-msg" rows="3" maxlength="420" placeholder="Your message"></textarea></label>
+    </div>
+  </div>
+
+  <ul class="tasks" id="tasks"></ul>
+  <p class="note" id="note" hidden></p>
+</div>
+
+<input type="file" id="picker" accept="image/*" hidden>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Your postcard">
+    <img id="result" alt="Finished photo bingo postcard">
+    <p id="save-hint">Press and hold the picture (or right-click it) to save.</p>
+    <div class="row"><button class="ghost" id="b-close" type="button">Close</button></div>
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* [title, hint, icon] — hints are mostly plain; the jokes live in a few hand-written notes */
+const TASKS = [
+  ["St Sophia Cathedral", "Built 1045–1050. Five domes, and only one of them got the gold."],
+  ["The Lead Dove", "Look up at the cross on the gold dome. Please don't shoo the dove."],
+  ["Millennium of Russia", "1,000 years in one bronze bell. Find Rurik: he got here first."],
+  ["The Detinets", "TIL Novgorod's kremlin is the Detinets. Same fortress, cuter name."],
+  ["Kokuy Tower", "Its name sounds like a sneeze. The view is worth the stairs."],
+  ["The Footbridge", "It joins the Sophia Side and the Trade Side, at last peacefully."],
+  ["Yaroslav's Court", "The arcades where the veche gathered to shout things out."],
+  ["Saviour on Ilyina", "The church with frescoes by Theophanes the Greek, 1378."],
+  ["Yuriev Monastery", "St George's Cathedral of 1119, right by Lake Ilmen."],
+  ["Vitoslavlitsy", "Log houses built without a single nail. Instructions not included."],
+  ["Draw Like Onfim", "He was seven and supposed to be doing his letters. Now he's in a museum."],
+  ["Crew at Sunset", "Everyone in one frame by the Volkhov. Yes, the photographer too."]
+];
+const COLS = 4, ROWS = 3, KEY = "novgorod-bingo-en-v1";
+const LINES = [];
+for (let r = 0; r < ROWS; r++) LINES.push([...Array(COLS)].map((_, c) => r * COLS + c));
+for (let c = 0; c < COLS; c++) LINES.push([...Array(ROWS)].map((_, r) => r * COLS + c));
+
+const EXPORT = location.hash === "#export" || location.hash === "#export-back";
+if (EXPORT) document.documentElement.classList.add("export");
+
+let state = { photos: {}, name: "", date: "", message: "", toName: "", toAddr: "", toCity: "" };
+if (!EXPORT) try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s) state = Object.assign(state, s); } catch (e) {}
+function say(t) { const n = document.getElementById("note"); n.textContent = t; n.hidden = false; }
+function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch (e) { say("Your browser ran out of space to keep the photos: they will disappear if you reload. Save the postcard before closing."); }
+}
+
+/* ---------- images ---------- */
+const cache = new Map();
+function img(src) {
+  if (cache.has(src)) return cache.get(src);
+  const i = new Image(); i.onload = () => draw(); i.src = src; cache.set(src, i); return i;
+}
+const ready = i => i && i.complete && i.naturalWidth > 0;
+const DECOR = { bells: "photos/bells.jpg", trinity: "photos/trinity.jpg", volkhov: "photos/volkhov.jpg", coa: "photos/coa.png", buddy: "photos/buddy-logo.png" };
+const REFS = TASKS.map((_, i) => "photos/ref" + String(i + 1).padStart(2, "0") + ".jpg");
+[...Object.values(DECOR), ...REFS].forEach(img);
+
+/* ---------- card geometry ---------- */
+const W = 2400, H = 1500, S = EXPORT ? 2 : 1;
+const C = { bark: "#F1ECE2", ink: "#241E19", muted: "#6B6158", cin: "#B3301B", gold: "#B98A2E", water: "#7FA3B5", waterFill: "rgba(127,163,181,.35)",
+  slot: "rgba(70,52,34,.07)", frameLine: "rgba(70,52,34,.38)", sketch: "rgba(36,30,25,.34)" };
+const GX = 914, GY = 200, GW = 1378, GAP = 24, CW = (GW - GAP * (COLS - 1)) / COLS, PH = 250, RH = 374;
+const cellRect = i => { const r = Math.floor(i / COLS), c = i % COLS; return { x: GX + c * (CW + GAP), y: GY + r * (RH + GAP), w: CW, h: PH }; };
+
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+let R = rng(1);
+const j = a => (R() - .5) * 2 * a;
+function wrap(ctx, text, maxW) {
+  const out = []; let line = "";
+  for (const w of text.split(" ")) { const t = line ? line + " " + w : w; if (ctx.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; }
+  if (line) out.push(line); return out;
+}
+function cover(ctx, im, x, y, w, h) {
+  const s = Math.max(w / im.naturalWidth, h / im.naturalHeight), iw = im.naturalWidth * s, ih = im.naturalHeight * s;
+  ctx.drawImage(im, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+}
+function spaced(ctx, text, x, y, sp, align) {
+  ctx.textAlign = align || "left";
+  if ("letterSpacing" in ctx) { ctx.letterSpacing = sp + "px"; ctx.fillText(text, x, y); ctx.letterSpacing = "0px"; } else ctx.fillText(text, x, y);
+}
+/* a pen line: slightly wobbly, drawn twice like a real hand going over it */
+function pen(ctx, x0, y0, x1, y1, wob = 2.2, passes = 2) {
+  for (let p = 0; p < passes; p++) {
+    const len = Math.hypot(x1 - x0, y1 - y0), n = Math.max(2, Math.round(len / 60));
+    ctx.beginPath(); ctx.moveTo(x0 + j(wob * .6), y0 + j(wob * .6));
+    for (let k = 1; k <= n; k++) { const t = k / n; ctx.lineTo(x0 + (x1 - x0) * t + j(wob), y0 + (y1 - y0) * t + j(wob)); }
+    ctx.stroke();
+  }
+}
+function penRect(ctx, x, y, w, h, wob) { pen(ctx, x, y, x + w, y, wob); pen(ctx, x + w, y, x + w, y + h, wob); pen(ctx, x + w, y + h, x, y + h, wob); pen(ctx, x, y + h, x, y, wob); }
+/* zakomara: the arched gable of Novgorod churches, used as every photo frame */
+function arch(ctx, x, y, w, h) {
+  const a = w * .2; ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y + a);
+  ctx.ellipse(x + w / 2, y + a, w / 2, a, 0, Math.PI, 0); ctx.lineTo(x + w, y + h); ctx.closePath();
+}
+function rhomb(ctx, x, y, s, fill) { ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x + s, y); ctx.lineTo(x, y + s); ctx.lineTo(x - s, y); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); }
+/* the rhomb-and-hooks motif of North Russian embroidered towels */
+function ornament(ctx, x, y, s, dark) {
+  s += j(.8);
+  rhomb(ctx, x, y, s, C.cin); rhomb(ctx, x, y, s * .55, C.bark); rhomb(ctx, x, y, s * .26, dark ? C.ink : C.cin);
+  ctx.strokeStyle = C.cin; ctx.lineWidth = 2.4; ctx.lineCap = "round";
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([dx, dy]) => {
+    ctx.beginPath(); ctx.moveTo(x + dx * s * .9, y + dy * s * .1); ctx.lineTo(x + dx * s * 1.45, y + dy * s * .55); ctx.lineTo(x + dx * s * 1.15, y + dy * s * .85); ctx.stroke();
+  });
+}
+
+function onion(ctx, x, base, w, h) {
+  ctx.beginPath(); ctx.moveTo(x - w / 2, base);
+  ctx.bezierCurveTo(x - w * .8, base - h * .45, x - w * .06, base - h * .68, x, base - h);
+  ctx.bezierCurveTo(x + w * .06, base - h * .68, x + w * .8, base - h * .45, x + w / 2, base);
+  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, base - h); ctx.lineTo(x, base - h - 14); ctx.moveTo(x - 5, base - h - 9); ctx.lineTo(x + 5, base - h - 9); ctx.stroke();
+}
+function background(ctx) {
+  ctx.fillStyle = C.bark; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(W / 2, H / 2, 300, W / 2, H / 2, 1550);
+  g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(1, "rgba(120,92,60,.2)");
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const r = rng(859); /* birch-bark lenticels and fibres */
+  for (let k = 0; k < 560; k++) {
+    const x = r() * W, y = r() * H, len = 8 + r() * 50, th = 1 + r() * 2.8;
+    ctx.fillStyle = `rgba(58,44,30,${.05 + r() * .1})`; ctx.fillRect(x, y, len, th);
+  }
+  for (let k = 0; k < 60; k++) { ctx.fillStyle = `rgba(255,255,255,${.2 + r() * .25})`; ctx.fillRect(r() * W, r() * H, 60 + r() * 220, 1); }
+  /* hand-drawn border band */
+  const o = 28, i = 76, band = (o + i) / 2;
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 3.4; ctx.lineCap = "round"; penRect(ctx, o, o, W - 2 * o, H - 2 * o, 1.6);
+  ctx.strokeStyle = C.cin; ctx.lineWidth = 2.6; penRect(ctx, i, i, W - 2 * i, H - 2 * i, 1.6);
+  const step = 52;
+  const side = (x0, y0, x1, y1) => {
+    const len = Math.hypot(x1 - x0, y1 - y0), n = Math.floor(len / step), d = len / n;
+    for (let k = 1; k < n; k++) { const t = k * d / len, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t; k % 2 ? ornament(ctx, x, y, 12, k % 4 === 1) : rhomb(ctx, x, y, 3.5, C.ink); }
+  };
+  side(band, band, W - band, band); side(band, H - band, W - band, H - band);
+  side(band, band, band, H - band); side(W - band, band, W - band, H - band);
+  [[band, band], [W - band, band], [band, H - band], [W - band, H - band]].forEach(([x, y]) => {
+    ctx.fillStyle = C.ink; ctx.fillRect(x - 22, y - 22, 44, 44);
+    ctx.fillStyle = C.gold; ctx.fillRect(x - 16, y - 16, 32, 32);
+    ctx.fillStyle = C.cin; ctx.fillRect(x - 3, y - 13, 6, 26); ctx.fillRect(x - 13, y - 3, 26, 6);
+  });
+  /* divider */
+  ctx.strokeStyle = C.cin; ctx.lineWidth = 2; pen(ctx, 880, 116, 880, 1384, 1.5);
+  for (let y = 190; y <= 1330; y += 162) ornament(ctx, 880, y, 9, true);
+}
+
+function tape(ctx, cx, cy, w, rot) {
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot * Math.PI / 180);
+  const h = 34; ctx.beginPath(); ctx.moveTo(-w / 2, -h / 2);
+  for (let x = -w / 2; x <= w / 2; x += 8) ctx.lineTo(x, -h / 2 + (Math.round(x / 8) % 2 ? 2 : -2));
+  ctx.lineTo(w / 2, h / 2); for (let x = w / 2; x >= -w / 2; x -= 8) ctx.lineTo(x, h / 2 + (Math.round(x / 8) % 2 ? 2 : -2));
+  ctx.closePath(); ctx.fillStyle = "rgba(196,72,48,.42)"; ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.35)"; for (let x = -w / 2 + 10; x < w / 2 - 6; x += 22) rhomb(ctx, x, 0, 5, "rgba(255,255,255,.4)");
+  ctx.restore();
+}
+function polaroid(ctx, im, cx, cy, w, h, rot, caption) {
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(rot * Math.PI / 180);
+  const pad = 13, bottom = 52, fw = w + pad * 2, fh = h + pad + bottom;
+  ctx.shadowColor = "rgba(40,28,16,.32)"; ctx.shadowBlur = 20; ctx.shadowOffsetY = 7;
+  ctx.fillStyle = "#FBF9F4"; ctx.fillRect(-fw / 2, -fh / 2, fw, fh);
+  ctx.shadowColor = "transparent";
+  if (ready(im)) { ctx.save(); ctx.beginPath(); ctx.rect(-w / 2, -fh / 2 + pad, w, h); ctx.clip(); cover(ctx, im, -w / 2, -fh / 2 + pad, w, h); ctx.restore(); }
+  else { ctx.fillStyle = "#DDD6C8"; ctx.fillRect(-w / 2, -fh / 2 + pad, w, h); }
+  ctx.fillStyle = C.ink; ctx.font = '600 32px "Caveat", cursive'; ctx.textAlign = "center";
+  ctx.fillText(caption, 0, fh / 2 - 16);
+  ctx.restore();
+}
+function arrow(ctx, pts, color) {
+  ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 2.6; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(pts[0], pts[1]); ctx.quadraticCurveTo(pts[2], pts[3], pts[4], pts[5]); ctx.stroke();
+  const a = Math.atan2(pts[5] - pts[3], pts[4] - pts[2]);
+  ctx.beginPath(); ctx.moveTo(pts[4], pts[5]); ctx.lineTo(pts[4] - 16 * Math.cos(a - .45), pts[5] - 16 * Math.sin(a - .45));
+  ctx.moveTo(pts[4], pts[5]); ctx.lineTo(pts[4] - 16 * Math.cos(a + .45), pts[5] - 16 * Math.sin(a + .45)); ctx.stroke(); ctx.restore();
+}
+function hand(ctx, text, x, y, size, maxW, color, lh) {
+  ctx.fillStyle = color || C.ink; ctx.font = `600 ${size}px "Caveat", cursive`; ctx.textAlign = "left";
+  wrap(ctx, text, maxW).forEach((l, k) => ctx.fillText(l, x, y + k * (lh || size * 1.05)));
+}
+function fish(ctx, x, y, s, flip) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(flip ? -s : s, s); ctx.strokeStyle = C.ink; ctx.fillStyle = "#C9CED2"; ctx.lineWidth = 1.6 / s;
+  ctx.beginPath(); ctx.moveTo(-22, 0); ctx.quadraticCurveTo(0, -11, 20, 0); ctx.quadraticCurveTo(0, 11, -22, 0); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(-31, -8); ctx.lineTo(-31, 8); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(13, -2, 1.6, 0, Math.PI * 2); ctx.fillStyle = C.ink; ctx.fill(); ctx.restore();
+}
+function marker(ctx, x, y, label) {
+  ctx.fillStyle = C.cin; ctx.beginPath(); ctx.arc(x, y, label.length > 1 ? 17 : 13, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "#fff"; ctx.font = '700 17px "PT Sans Narrow", sans-serif'; ctx.textAlign = "center"; ctx.fillText(label, x, y + 6);
+}
+
+/* the city really is split in two by the Volkhov: Sophia Side and Trade Side */
+function map(ctx) {
+  const x0 = 112, y0 = 866, w = 452, h = 340;
+  ctx.save(); ctx.translate(x0 + w / 2, y0 + h / 2); ctx.rotate(-1.2 * Math.PI / 180); ctx.translate(-w / 2, -h / 2);
+  const r = rng(1136);
+  ctx.beginPath(); ctx.moveTo(0, 0);
+  for (let x = 0; x <= w; x += 14) ctx.lineTo(x, r() * 6);
+  for (let y = 0; y <= h; y += 14) ctx.lineTo(w - r() * 6, y);
+  for (let x = w; x >= 0; x -= 14) ctx.lineTo(x, h - r() * 6);
+  for (let y = h; y >= 0; y -= 14) ctx.lineTo(r() * 6, y);
+  ctx.closePath();
+  ctx.shadowColor = "rgba(40,28,16,.25)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 5;
+  ctx.fillStyle = "#E9DFC9"; ctx.fill(); ctx.shadowColor = "transparent";
+  for (let k = 0; k < 40; k++) { ctx.fillStyle = `rgba(58,44,30,${.06 + r() * .1})`; ctx.fillRect(r() * w, r() * h, 6 + r() * 26, 1 + r() * 2); }
+
+  ctx.fillStyle = C.ink; ctx.font = '700 31px "Caveat", cursive'; ctx.textAlign = "left"; ctx.fillText("Map of the quest", 20, 40);
+  /* compass */
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w - 34, 64); ctx.lineTo(w - 34, 22); ctx.lineTo(w - 41, 34); ctx.moveTo(w - 34, 22); ctx.lineTo(w - 27, 34); ctx.stroke();
+  ctx.font = '700 22px "Caveat", cursive'; ctx.textAlign = "center"; ctx.fillText("N", w - 34, 86);
+  /* Lake Ilmen */
+  ctx.fillStyle = C.waterFill; ctx.strokeStyle = C.water; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.ellipse(130, h - 34, 140, 40, -.05, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  fish(ctx, 82, h - 34, .9); fish(ctx, 162, h - 30, .9, true);
+  ctx.fillStyle = C.ink; ctx.font = '600 23px "Caveat", cursive'; ctx.textAlign = "left"; ctx.fillText("Lake Ilmen", 282, h - 26);
+  /* Volkhov */
+  ctx.strokeStyle = C.water; ctx.lineWidth = 15; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.moveTo(230, h - 60); ctx.bezierCurveTo(210, 220, 300, 190, 262, 120); ctx.bezierCurveTo(240, 80, 300, 50, 290, 0); ctx.stroke();
+  ctx.fillStyle = C.ink; ctx.save(); ctx.translate(292, 212); ctx.rotate(-1.15); ctx.font = 'italic 19px "Alegreya", serif'; ctx.fillText("Volkhov", 0, 0); ctx.restore();
+  /* Detinets */
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 2.4; ctx.lineCap = "round";
+  ctx.beginPath(); ctx.ellipse(170, 116, 58, 40, -.2, 0, Math.PI * 2); ctx.stroke();
+  for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) { ctx.fillStyle = C.ink; ctx.fillRect(170 + Math.cos(a) * 58 - 3, 116 + Math.sin(a) * 40 - 3, 6, 6); }
+  onion(ctx, 170, 118, 14, 18);
+  /* bridge */
+  ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(226, 112); ctx.quadraticCurveTo(262, 100, 300, 112); ctx.stroke();
+  marker(ctx, 116, 92, "1–5"); marker(ctx, 262, 84, "6"); marker(ctx, 340, 80, "7"); marker(ctx, 392, 176, "8");
+  marker(ctx, 196, 238, "9"); marker(ctx, 128, 220, "10");
+  ctx.fillStyle = C.muted; ctx.font = '600 22px "Caveat", cursive'; ctx.textAlign = "center";
+  ctx.fillText("Sophia Side", 96, 180); ctx.fillText("Trade Side", 376, 220);
+  ctx.restore();
+}
+
+/* a Novgorod lead seal, the medieval way to make a document official */
+function seal(ctx, lines) {
+  const cx = 720, cy = 1132, Rr = 74;
+  ctx.save();
+  if (!lines) {
+    ctx.setLineDash([7, 8]); ctx.strokeStyle = C.frameLine; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(cx, cy, Rr, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = C.muted; ctx.font = '600 25px "Caveat", cursive'; ctx.textAlign = "center";
+    ["your seal", "goes here", "after bingo"].forEach((t, k) => ctx.fillText(t, cx, cy - 20 + k * 25));
+    ctx.restore(); return;
+  }
+  ctx.translate(cx, cy); ctx.rotate(-0.2);
+  ctx.strokeStyle = "#4A4E53"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-10, -Rr - 26); ctx.quadraticCurveTo(0, -Rr - 4, 8, -Rr - 30); ctx.stroke();
+  const g = ctx.createRadialGradient(-25, -30, 10, 0, 0, Rr);
+  g.addColorStop(0, "#BEC2C6"); g.addColorStop(1, "#5F646A");
+  ctx.shadowColor = "rgba(0,0,0,.35)"; ctx.shadowBlur = 14; ctx.shadowOffsetY = 5;
+  ctx.fillStyle = g; ctx.beginPath();
+  for (let a = 0; a <= Math.PI * 2 + .01; a += Math.PI / 18) { const rr = Rr + Math.sin(a * 5) * 2.5; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+  ctx.fill(); ctx.shadowColor = "transparent";
+  ctx.strokeStyle = "rgba(255,255,255,.45)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, Rr - 12, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = "#2B2E31"; ctx.font = '700 14px "PT Sans Narrow", sans-serif'; ctx.textAlign = "center";
+  const ring = "✦ SEALED IN NOVGOROD ✦ SEALED IN NOVGOROD ";
+  for (let k = 0; k < ring.length; k++) { ctx.save(); ctx.rotate(k / ring.length * Math.PI * 2); ctx.fillText(ring[k], 0, -Rr + 25); ctx.restore(); }
+  ctx.font = '29px "Ruslan Display", serif'; ctx.fillText("BINGO!", 0, 8);
+  ctx.font = '700 15px "PT Sans Narrow", sans-serif'; ctx.fillText(lines === 1 ? "1 LINE" : lines + " LINES", 0, 30);
+  ctx.restore();
+}
+
+function leftPanel(ctx) {
+  const coa = img(DECOR.coa);
+  if (ready(coa)) ctx.drawImage(coa, 114, 108, 120, 146);
+  ctx.fillStyle = C.cin; ctx.font = '700 22px "PT Sans Narrow", sans-serif'; spaced(ctx, "LORD NOVGOROD THE GREAT", 256, 136, 6);
+  ctx.fillStyle = C.ink; ctx.font = '76px "Ruslan Display", serif'; ctx.textAlign = "left";
+  ctx.fillText("Veliky", 252, 212); ctx.fillText("Novgorod", 252, 288);
+  ctx.save(); ctx.translate(598, 196); ctx.rotate(-7 * Math.PI / 180);
+  ctx.fillStyle = C.cin; ctx.font = '700 62px "Caveat", cursive'; ctx.textAlign = "left"; ctx.fillText("photo bingo!", 0, 0);
+  ctx.strokeStyle = C.cin; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(4, 14);
+  for (let x = 4; x <= 230; x += 18) ctx.quadraticCurveTo(x + 9, 22, x + 18, 13);
+  ctx.stroke(); ctx.restore();
+  ctx.fillStyle = C.muted; ctx.font = 'italic 25px "Alegreya", serif'; ctx.textAlign = "left";
+  ctx.fillText("Novgorod means “New Town”. It has been new since 859.", 114, 338);
+
+  polaroid(ctx, img(DECOR.bells), 222, 556, 196, 250, -4, "the bells");
+  tape(ctx, 214, 404, 100, 4);
+  polaroid(ctx, img(DECOR.trinity), 458, 572, 196, 250, 3, "Theophanes, 1378");
+  tape(ctx, 468, 420, 92, -5);
+  polaroid(ctx, img(DECOR.volkhov), 706, 512, 236, 150, 6, "the Volkhov");
+  tape(ctx, 642, 420, 80, -38); tape(ctx, 770, 432, 80, 40);
+
+  hand(ctx, "Novgorod voted by ringing a bell and shouting. Group chats were louder back then.", 112, 752, 25, 236, C.ink, 26);
+  hand(ctx, "Painted in 1378, with no undo button.", 372, 766, 25, 190, C.ink, 26);
+  hand(ctx, "Same river, two sides, one city.", 610, 640, 25, 230, C.ink, 26);
+
+  map(ctx);
+  hand(ctx, "The two sides used to settle their arguments on this bridge. Now they just take selfies here.", 600, 912, 27, 256, C.ink, 28);
+  arrow(ctx, [596, 1010, 470, 1002, 404, 982], C.cin);
+
+  ctx.fillStyle = C.muted; ctx.font = '700 19px "PT Sans Narrow", sans-serif';
+  spaced(ctx, "EXPLORER", 114, 1266, 4); spaced(ctx, "DATE", 590, 1266, 4);
+  ctx.strokeStyle = C.frameLine; ctx.lineWidth = 2; pen(ctx, 262, 1270, 556, 1270, 1, 1); pen(ctx, 654, 1270, 850, 1270, 1, 1);
+  ctx.fillStyle = C.ink; ctx.font = '700 44px "Caveat", cursive'; ctx.textAlign = "left";
+  if (state.name.trim()) ctx.fillText(state.name.trim(), 268, 1260);
+  if (state.date.trim()) ctx.fillText(state.date.trim(), 660, 1260);
+
+  ctx.fillStyle = C.muted; ctx.font = 'italic 22px "Alegreya", serif'; ctx.textAlign = "left";
+  wrap(ctx, "House rules: one photo per frame, selfies count. If everyone shouts “Bingo!” at once, that's a veche, and everybody wins.", 736)
+    .forEach((l, k) => ctx.fillText(l, 114, 1318 + k * 29));
+}
+
+/* the organiser's badge: the club's own logo file when present, otherwise its name set in type */
+function buddy(ctx) {
+  const d = 74, x = GX + GW - d, y = 94, logo = img(DECOR.buddy);
+  if (ready(logo)) ctx.drawImage(logo, x, y, d, d);
+  ctx.fillStyle = C.muted; ctx.font = '600 23px "Caveat", cursive'; ctx.textAlign = "right"; ctx.fillText("brought to you by", x - 14, y + 28);
+  ctx.fillStyle = C.ink; ctx.font = '700 23px "PT Sans Narrow", sans-serif'; spaced(ctx, "BUDDY SYSTEM ITMO", x - 14, y + 58, 3, "right");
+}
+
+function grid(ctx, hot) {
+  const count = Object.keys(state.photos).length, lines = LINES.filter(l => l.every(i => state.photos[i])).length;
+  ctx.fillStyle = C.ink; ctx.font = '700 25px "PT Sans Narrow", sans-serif';
+  spaced(ctx, "FIND IT  ·  SNAP IT  ·  SHOUT “BINGO!”", GX, 150, 5);
+  ctx.fillStyle = C.cin; ctx.font = '700 24px "PT Sans Narrow", sans-serif'; spaced(ctx, `FOUND ${count} / ${TASKS.length}  ·  LINES ${lines}`, GX + 610, 150, 2);
+  buddy(ctx);
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 1.6; pen(ctx, GX, 168, GX + GW, 168, 1.2, 1);
+
+  const r = rng(1478);
+  TASKS.forEach(([title, hint], i) => {
+    const { x, y, w, h } = cellRect(i), p = state.photos[i] ? img(state.photos[i]) : null, rot = (r() - .5) * 1.4 * Math.PI / 180;
+    ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.rotate(rot); ctx.translate(-(x + w / 2), -(y + h / 2));
+    ctx.save(); arch(ctx, x, y, w, h); ctx.clip();
+    if (p && ready(p)) cover(ctx, p, x, y, w, h);
+    else {
+      ctx.fillStyle = C.slot; ctx.fillRect(x, y, w, h);
+      const ref = img(REFS[i]);
+      if (ready(ref)) {
+        ctx.globalAlpha = .62; if ("filter" in ctx) ctx.filter = "sepia(.55) saturate(.7)";
+        cover(ctx, ref, x, y, w, h); ctx.filter = "none"; ctx.globalAlpha = 1;
+        ctx.fillStyle = "rgba(241,236,226,.28)"; ctx.fillRect(x, y, w, h);
+      }
+    }
+    ctx.restore();
+    arch(ctx, x, y, w, h);
+    if (hot.has(i)) { ctx.strokeStyle = C.gold; ctx.lineWidth = 9; ctx.stroke(); }
+    else if (p) { ctx.strokeStyle = C.ink; ctx.lineWidth = 3; ctx.stroke(); }
+    else { ctx.setLineDash([10, 8]); ctx.strokeStyle = C.frameLine; ctx.lineWidth = 2.4; ctx.stroke(); ctx.setLineDash([]); }
+    ctx.fillStyle = C.cin; ctx.beginPath(); ctx.arc(x + 26, y + h - 26, 19, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = '700 22px "PT Sans Narrow", sans-serif'; ctx.textAlign = "center"; ctx.fillText(String(i + 1), x + 26, y + h - 18);
+    if (!p) {
+      ctx.fillStyle = "rgba(36,30,25,.72)"; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x + w - 156, y + h - 44, 140, 30, 15) : ctx.rect(x + w - 156, y + h - 44, 140, 30); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = '700 16px "PT Sans Narrow", sans-serif'; spaced(ctx, "+ YOUR PHOTO", x + w - 86, y + h - 23, 3, "center");
+    }
+    ctx.restore();
+
+    ctx.fillStyle = C.ink; ctx.font = '700 29px "Alegreya SC", "Alegreya", serif'; ctx.textAlign = "left";
+    ctx.fillText(title, x, y + h + 38);
+    ctx.fillStyle = C.muted; ctx.font = 'italic 21px "Alegreya", serif';
+    wrap(ctx, hint, w).slice(0, 3).forEach((l, k) => ctx.fillText(l, x, y + h + 68 + k * 25));
+  });
+  return lines;
+}
+
+/* ================= the back of the postcard ================= */
+function airmail(ctx) {
+  ctx.fillStyle = "#F8F3E8"; ctx.fillRect(0, 0, W, H);
+  const r = rng(1951);
+  for (let k = 0; k < 900; k++) { ctx.fillStyle = `rgba(90,70,40,${.03 + r() * .05})`; ctx.fillRect(r() * W, r() * H, 1 + r() * 3, 1 + r() * 3); }
+  ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, H); ctx.rect(44, 44, W - 88, H - 88); ctx.clip("evenodd");
+  ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+  for (let k = -H, n = 0; k < W + H; k += 64, n++) {
+    ctx.fillStyle = n % 2 ? "#1F4E8C" : C.cin;
+    ctx.beginPath(); ctx.moveTo(k, 0); ctx.lineTo(k + 40, 0); ctx.lineTo(k - 4, 44); ctx.lineTo(k - 44, 44); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(k, H - 44); ctx.lineTo(k + 40, H - 44); ctx.lineTo(k - 4, H); ctx.lineTo(k - 44, H); ctx.closePath(); ctx.fill();
+  }
+  for (let k = -W, n = 0; k < H + W; k += 64, n++) {
+    ctx.fillStyle = n % 2 ? "#1F4E8C" : C.cin;
+    ctx.beginPath(); ctx.moveTo(0, k); ctx.lineTo(0, k + 40); ctx.lineTo(44, k - 4); ctx.lineTo(44, k - 44); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(W - 44, k); ctx.lineTo(W - 44, k + 40); ctx.lineTo(W, k - 4); ctx.lineTo(W, k - 44); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function stamp(ctx, x, y, w, h) {
+  ctx.save(); ctx.translate(x + w / 2, y + h / 2); ctx.rotate(2 * Math.PI / 180); ctx.translate(-w / 2, -h / 2);
+  ctx.shadowColor = "rgba(40,28,16,.28)"; ctx.shadowBlur = 10; ctx.shadowOffsetY = 3;
+  ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, w, h); ctx.shadowColor = "transparent";
+  ctx.fillStyle = "#F8F3E8"; const pr = 8, gap = 24;
+  for (let px = gap / 2; px < w; px += gap) { ctx.beginPath(); ctx.arc(px, 0, pr, 0, Math.PI * 2); ctx.arc(px, h, pr, 0, Math.PI * 2); ctx.fill(); }
+  for (let py = gap / 2; py < h; py += gap) { ctx.beginPath(); ctx.arc(0, py, pr, 0, Math.PI * 2); ctx.arc(w, py, pr, 0, Math.PI * 2); ctx.fill(); }
+  const ph = img(REFS[0]), ix = 20, iy = 20, iw = w - 40, ih = h - 78;
+  ctx.save(); ctx.beginPath(); ctx.rect(ix, iy, iw, ih); ctx.clip();
+  if (ready(ph)) cover(ctx, ph, ix, iy, iw, ih); else { ctx.fillStyle = "#DDD6C8"; ctx.fillRect(ix, iy, iw, ih); }
+  ctx.restore();
+  ctx.fillStyle = "#fff"; ctx.font = '34px "Ruslan Display", serif'; ctx.textAlign = "left";
+  ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 6; ctx.fillText("859", ix + 10, iy + 40); ctx.shadowColor = "transparent";
+  ctx.fillStyle = C.ink; ctx.font = '700 19px "PT Sans Narrow", sans-serif'; spaced(ctx, "NOVGOROD POST", w / 2, h - 30, 3, "center");
+  ctx.restore();
+}
+function postmark(ctx, cx, cy) {
+  const ink = "rgba(28,38,70,.72)", d = state.date.trim()
+    ? state.date.trim().toUpperCase()
+    : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase();
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate(-10 * Math.PI / 180);
+  ctx.strokeStyle = ink; ctx.fillStyle = ink;
+  ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0, 0, 96, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, 64, 0, Math.PI * 2); ctx.stroke();
+  ctx.font = '700 19px "PT Sans Narrow", sans-serif'; ctx.textAlign = "center";
+  const ring = "VELIKY NOVGOROD  ✦  RUSSIA  ✦  ";
+  for (let k = 0; k < ring.length; k++) { ctx.save(); ctx.rotate(k / ring.length * Math.PI * 2); ctx.fillText(ring[k], 0, -73); ctx.restore(); }
+  ctx.font = '700 22px "PT Sans Narrow", sans-serif';
+  const dl = wrap(ctx, d, 108).slice(0, 2);
+  dl.forEach((l, k) => ctx.fillText(l, 0, (dl.length > 1 ? -4 : 8) + k * 26));
+  ctx.lineWidth = 4;
+  for (let k = 0; k < 4; k++) {
+    ctx.beginPath(); const yy = -48 + k * 32;
+    for (let x = 108; x <= 430; x += 4) { const yv = yy + Math.sin(x / 22) * 9; if (x === 108) ctx.moveTo(x, yv); else ctx.lineTo(x, yv); }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+function linesOf(ctx, text, maxW) { return text.split(/\n/).flatMap(p => p.trim() ? wrap(ctx, p.trim(), maxW) : [""]); }
+
+function drawBack(ctx) {
+  airmail(ctx);
+  ctx.fillStyle = C.ink; ctx.font = '72px "Ruslan Display", serif'; ctx.textAlign = "left"; ctx.fillText("Postcard", 128, 190);
+  ctx.fillStyle = C.cin; ctx.font = '700 44px "Caveat", cursive'; ctx.fillText("from Lord Novgorod the Great", 566, 186);
+  ctx.fillStyle = C.muted; ctx.font = 'italic 25px "Alegreya", serif';
+  wrap(ctx, "Novgorodians were sending letters on birch bark back in the 11th century. This one travels a little faster.", 1080)
+    .forEach((l, k) => ctx.fillText(l, 130, 246 + k * 31));
+
+  /* message on ruled lines */
+  ctx.strokeStyle = "rgba(31,78,140,.22)"; ctx.lineWidth = 2;
+  for (let k = 1; k <= 8; k++) pen(ctx, 130, 330 + k * 74, 1220, 330 + k * 74, .8, 1);
+  ctx.fillStyle = "#1E2A4A"; ctx.font = '700 48px "Caveat", cursive'; ctx.textAlign = "left";
+  linesOf(ctx, state.message || "", 1080).slice(0, 8).forEach((l, k) => ctx.fillText(l, 136, 330 + (k + 1) * 74 - 10));
+
+  /* quest report: a strip of tiny prints */
+  const count = Object.keys(state.photos).length, lines = LINES.filter(l => l.every(i => state.photos[i])).length;
+  ctx.fillStyle = C.ink; ctx.font = '700 23px "PT Sans Narrow", sans-serif'; spaced(ctx, "QUEST REPORT", 130, 1040, 5);
+  ctx.fillStyle = C.cin; ctx.font = '700 32px "Caveat", cursive'; ctx.textAlign = "left";
+  ctx.fillText(count + " of " + TASKS.length + " found" + (lines ? ", " + lines + " bingo line" + (lines > 1 ? "s" : "") + "!" : ", bingo pending"), 340, 1042);
+  const tw = 160, th = 112, tg = 14;
+  TASKS.forEach((_, i) => {
+    const x = 130 + (i % 6) * (tw + tg), y = 1066 + Math.floor(i / 6) * (th + tg), p = state.photos[i] ? img(state.photos[i]) : null;
+    ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(40,28,16,.2)"; ctx.shadowBlur = 6; ctx.fillRect(x - 5, y - 5, tw + 10, th + 10); ctx.shadowColor = "transparent";
+    ctx.save(); ctx.beginPath(); ctx.rect(x, y, tw, th); ctx.clip();
+    if (p && ready(p)) cover(ctx, p, x, y, tw, th);
+    else {
+      const ref = img(REFS[i]); ctx.fillStyle = "#E4DDCF"; ctx.fillRect(x, y, tw, th);
+      if (ready(ref)) { ctx.globalAlpha = .3; if ("filter" in ctx) ctx.filter = "grayscale(1)"; cover(ctx, ref, x, y, tw, th); ctx.filter = "none"; ctx.globalAlpha = 1; }
+    }
+    ctx.restore();
+    ctx.fillStyle = p ? C.cin : "rgba(36,30,25,.55)"; ctx.beginPath(); ctx.arc(x + 17, y + 17, 13, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = '700 15px "PT Sans Narrow", sans-serif'; ctx.textAlign = "center"; ctx.fillText(String(i + 1), x + 17, y + 22);
+  });
+
+  /* divider */
+  ctx.strokeStyle = C.ink; ctx.lineWidth = 2.2; pen(ctx, 1290, 120, 1290, 1380, 1.4);
+  for (let y = 300; y <= 1200; y += 300) ornament(ctx, 1290, y, 9, true);
+
+  /* right half: air mail label, stamp, postmark, address */
+  ctx.save(); ctx.translate(1350, 118); ctx.rotate(-2 * Math.PI / 180);
+  ctx.fillStyle = "#1F4E8C"; ctx.fillRect(0, 0, 290, 58);
+  ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(6, 6, 278, 46);
+  ctx.fillStyle = "#fff"; ctx.font = '700 25px "PT Sans Narrow", sans-serif'; spaced(ctx, "BY AIR MAIL", 145, 39, 6, "center");
+  ctx.restore();
+  stamp(ctx, 1996, 108, 236, 300);
+  postmark(ctx, 1860, 330);
+
+  ctx.fillStyle = C.cin; ctx.font = '700 46px "Caveat", cursive'; ctx.textAlign = "left"; ctx.fillText("Wish you were here.", 1350, 560);
+  ctx.fillStyle = C.ink; ctx.font = '600 34px "Caveat", cursive'; ctx.fillText("Next time, you're coming with me.", 1350, 606);
+
+  ctx.fillStyle = C.muted; ctx.font = '700 21px "PT Sans Narrow", sans-serif'; spaced(ctx, "TO", 1350, 700, 6);
+  ctx.strokeStyle = "rgba(36,30,25,.45)"; ctx.lineWidth = 2.2;
+  for (let k = 0; k < 4; k++) pen(ctx, 1350, 790 + k * 92, 2240, 790 + k * 92, 1, 1);
+  ctx.fillStyle = "#1E2A4A"; ctx.font = '700 52px "Caveat", cursive'; ctx.textAlign = "left";
+  [state.toName, state.toAddr, state.toCity].forEach((t, k) => { t = (t || "").trim(); if (t) ctx.fillText(t, 1360, 778 + k * 92); });
+
+  const logo = img(DECOR.buddy);
+  if (ready(logo)) ctx.drawImage(logo, 1350, 1196, 132, 132);
+  ctx.fillStyle = C.ink; ctx.font = '700 31px "PT Sans Narrow", sans-serif'; spaced(ctx, "BUDDY SYSTEM ITMO", 1506, 1252, 4);
+  ctx.fillStyle = C.muted; ctx.font = 'italic 24px "Alegreya", serif'; ctx.textAlign = "left";
+  ctx.fillText("Friends for international students at ITMO University.", 1506, 1290);
+  ctx.fillText("A photo bingo walk across Veliky Novgorod.", 1506, 1322);
+  ctx.fillStyle = "rgba(107,97,88,.8)"; ctx.font = '15px "PT Sans Narrow", sans-serif'; ctx.textAlign = "right";
+  ctx.fillText("Stamp photo: Alexxx1979 / Wikimedia Commons, CC BY-SA 4.0", W - 70, H - 62);
+}
+
+const canvas = document.getElementById("card"), backCanvas = document.getElementById("back");
+[canvas, backCanvas].forEach(c => { c.width = W * S; c.height = H * S; });
+const ctx = canvas.getContext("2d"), bctx = backCanvas.getContext("2d");
+function lineState() { const done = LINES.filter(l => l.every(i => state.photos[i])); return { done, hot: new Set(done.flat()) }; }
+let raf = 0;
+function draw() {
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(() => {
+    R = rng(1045); ctx.setTransform(S, 0, 0, S, 0, 0);
+    const { hot } = lineState();
+    background(ctx); leftPanel(ctx); const lines = grid(ctx, hot); seal(ctx, lines);
+    ctx.fillStyle = "rgba(107,97,88,.8)"; ctx.font = '15px "PT Sans Narrow", sans-serif'; ctx.textAlign = "right";
+    ctx.fillText("Photos via Wikimedia Commons: Alexxx1979, A.Savin, Bahnfrend, Lite, Aleksandr Sigachyov, Dar Veter, Alaexis, Ludvig14, Vityavo (CC BY-SA / CC0)", W - 100, H - 92);
+    R = rng(1478); bctx.setTransform(S, 0, 0, S, 0, 0); drawBack(bctx);
+  });
+}
+
+/* ---------- front / back tabs ---------- */
+const tabFront = document.getElementById("tab-front"), tabBack = document.getElementById("tab-back");
+const stageFront = document.getElementById("stage-front"), stageBack = document.getElementById("stage-back");
+function showSide(side) {
+  const front = side === "front";
+  stageFront.hidden = !front; stageBack.hidden = front;
+  tabFront.setAttribute("aria-selected", front); tabBack.setAttribute("aria-selected", !front);
+}
+tabFront.onclick = () => showSide("front");
+tabBack.onclick = () => showSide("back");
+if (location.hash === "#export-back") showSide("back");
+
+/* ---------- quest list + picking ---------- */
+const list = document.getElementById("tasks"), picker = document.getElementById("picker");
+let picking = -1;
+function pick(i) { picking = i; picker.value = ""; picker.click(); }
+function renderList() {
+  list.innerHTML = "";
+  TASKS.forEach(([title], i) => {
+    const li = document.createElement("li"); if (state.photos[i]) li.className = "done";
+    const n = document.createElement("span"); n.className = "n"; n.textContent = i + 1;
+    const t = document.createElement("span"); t.className = "t"; t.textContent = title;
+    const b = document.createElement("button"); b.type = "button"; b.className = "ghost"; b.id = "add-" + i;
+    b.textContent = state.photos[i] ? "Replace" : "Add photo"; b.onclick = () => pick(i);
+    li.append(n, t, b);
+    if (state.photos[i]) {
+      const d = document.createElement("button"); d.type = "button"; d.className = "ghost"; d.id = "del-" + i; d.textContent = "Remove";
+      d.setAttribute("aria-label", "Remove photo for " + title);
+      d.onclick = () => { delete state.photos[i]; persist(); refresh(); };
+      li.append(d);
+    }
+    list.append(li);
+  });
+}
+function refresh() { renderList(); draw(); }
+
+canvas.addEventListener("click", e => {
+  const r = canvas.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width, y = (e.clientY - r.top) * H / r.height;
+  for (let i = 0; i < TASKS.length; i++) { const c = cellRect(i); if (x >= c.x && x <= c.x + c.w && y >= c.y && y <= c.y + c.h + 130) { pick(i); return; } }
+});
+backCanvas.addEventListener("click", e => {
+  const r = backCanvas.getBoundingClientRect(), x = (e.clientX - r.left) * W / r.width;
+  document.getElementById(x < 1290 ? "f-msg" : "f-to").focus();
+});
+picker.addEventListener("change", () => {
+  const f = picker.files && picker.files[0]; if (!f || picking < 0) return;
+  const idx = picking, url = URL.createObjectURL(f), im = new Image();
+  im.onload = () => {
+    const k = Math.min(1, 1000 / Math.max(im.width, im.height)), c = document.createElement("canvas");
+    c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+    state.photos[idx] = c.toDataURL("image/jpeg", .84); URL.revokeObjectURL(url); persist(); refresh();
+  };
+  im.onerror = () => { URL.revokeObjectURL(url); say("That file didn't open as a picture. Try a JPG or PNG."); };
+  im.src = url;
+});
+
+[["f-name", "name"], ["f-date", "date"], ["f-msg", "message"], ["f-to", "toName"], ["f-addr", "toAddr"], ["f-city", "toCity"]].forEach(([id, key]) => {
+  const el = document.getElementById(id); el.value = state[key] || "";
+  el.oninput = () => { state[key] = el.value; persist(); draw(); };
+});
+
+/* ---------- saving ---------- */
+let downloads = null;
+(async () => { try { downloads = window.claude && window.claude.use ? await window.claude.use("downloads") : null; } catch (e) { downloads = null; } })();
+const overlay = document.getElementById("overlay");
+function showForLongPress(blob) {
+  const res = document.getElementById("result"); if (res.src.startsWith("blob:")) URL.revokeObjectURL(res.src);
+  res.src = URL.createObjectURL(blob); overlay.hidden = false;
+}
+const slug = () => { const s = state.name.trim().replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, ""); return s ? "-" + s : ""; };
+/* one PDF: page 1 is the front, page 2 the back */
+function postcardPdf() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [200, 125] });
+  doc.addImage(canvas.toDataURL("image/jpeg", .9), "JPEG", 0, 0, 200, 125);
+  doc.addPage([200, 125], "landscape");
+  doc.addImage(backCanvas.toDataURL("image/jpeg", .9), "JPEG", 0, 0, 200, 125);
+  return doc.output("blob");
+}
+document.getElementById("b-dl").onclick = async e => {
+  const btn = e.currentTarget, label = "Download PDF";
+  btn.disabled = true; btn.textContent = "Preparing…";
+  try {
+    try { await document.fonts.ready; } catch (err) {}
+    const blob = postcardPdf(), filename = "novgorod-postcard" + slug() + ".pdf";
+    if (downloads) {
+      try { await downloads.save({ filename, data: blob }); btn.textContent = "Saved!"; setTimeout(() => btn.textContent = label, 1800); return; }
+      catch (err) { if (err && (err.code === "declined" || err.code === "rate_limited")) return; }
+    }
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  } finally { btn.disabled = false; if (btn.textContent === "Preparing…") btn.textContent = label; }
+};
+document.getElementById("b-close").onclick = () => { overlay.hidden = true; };
+overlay.addEventListener("click", e => { if (e.target === overlay) overlay.hidden = true; });
+
+document.addEventListener("keydown", e => { if (e.key === "Escape") overlay.hidden = true; });
+
+refresh();
+if (document.fonts) {
+  ['76px "Ruslan Display"', '700 29px "Alegreya"', 'italic 21px "Alegreya"', '700 29px "Alegreya SC"', '700 27px "PT Sans Narrow"', '600 31px "Caveat"', '700 66px "Caveat"']
+    .forEach(f => document.fonts.load(f).then(draw, () => {}));
+  document.fonts.ready.then(draw);
+}
+</script>
+
+</body></html>
