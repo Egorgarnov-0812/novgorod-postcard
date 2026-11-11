@@ -94,7 +94,7 @@ html.export .tabs { display: none }
   <div class="controls">
     <div class="fields">
       <label for="f-name">Explorer<input id="f-name" type="text" placeholder="Your name" maxlength="22" autocomplete="off"></label>
-      <label for="f-date">Date<input id="f-date" type="text" placeholder="Oct 25, 2026" maxlength="16" autocomplete="off"></label>
+      <label for="f-date">Date<input id="f-date" type="text" placeholder="15 Nov 2026" maxlength="16" autocomplete="off"></label>
       <label for="f-to">To<input id="f-to" type="text" placeholder="Name" maxlength="30" autocomplete="off"></label>
       <label for="f-addr">Address<input id="f-addr" type="text" placeholder="Street" maxlength="34" autocomplete="off"></label>
       <label for="f-city">City &amp; country<input id="f-city" type="text" placeholder="City, country" maxlength="34" autocomplete="off"></label>
@@ -142,6 +142,7 @@ if (EXPORT) document.documentElement.classList.add("export");
 
 let state = { photos: {}, name: "", date: "", message: "", toName: "", toAddr: "", toCity: "" };
 if (!EXPORT) try { const s = JSON.parse(localStorage.getItem(KEY) || "null"); if (s) state = Object.assign(state, s); } catch (e) {}
+if (!state.date.trim()) state.date = "15 Nov 2026"; /* the trip day */
 function say(t) { const n = document.getElementById("note"); n.textContent = t; n.hidden = false; }
 function persist() {
   try { localStorage.setItem(KEY, JSON.stringify(state)); }
