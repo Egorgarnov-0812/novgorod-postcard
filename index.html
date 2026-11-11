@@ -62,6 +62,9 @@ h2 { font-family: var(--label); font-size: 14px; letter-spacing: .18em; text-tra
 .tasks li.done .t small::before { content: "✓ "; color: var(--cinnabar) }
 .tasks button { flex: none; font: 13px var(--label); letter-spacing: .05em; padding: 6px 9px }
 .note { color: var(--muted); font-size: 13.5px; margin: 0; line-height: 1.45 }
+.credits { color: var(--muted); font-size: 12.5px; line-height: 1.45 }
+.credits summary { cursor: pointer; font-family: var(--label); letter-spacing: .08em; text-transform: uppercase; font-size: 12px }
+.credits p { margin: 6px 0 0 }
 
 .overlay { position: fixed; inset: 0; background: rgba(12,10,8,.84); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10 }
 .sheet { background: var(--panel); border-radius: 4px; padding: 18px; max-width: 900px; width: 100%; max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 12px }
@@ -104,6 +107,9 @@ html.export .tabs { display: none }
 
   <ul class="tasks" id="tasks"></ul>
   <p class="note" id="note" hidden></p>
+  <details class="credits"><summary>Photo credits</summary>
+    <p>Photos from Wikimedia Commons: St Sophia, the gold dome, Millennium of Russia, Yaroslav's Court and the Volkhov at sunset by Alexxx1979 (CC BY-SA 4.0); the Detinets by Lite (CC BY-SA 3.0); Kokuy Tower by Aleksandr Sigachyov (CC BY-SA 4.0); the footbridge by Dar Veter (CC BY-SA 3.0); Yuriev Monastery by A.Savin (CC BY-SA 3.0); Vitoslavlitsy by Ludvig14 (CC BY-SA 3.0); the Volkhov by Bahnfrend (CC BY-SA 4.0); Sophia's bells by Vityavo (CC0). The Trinity fresco by Theophanes the Greek and the coat of arms of Veliky Novgorod are public domain.</p>
+  </details>
 </div>
 
 <input type="file" id="picker" accept="image/*" hidden>
@@ -580,8 +586,6 @@ function drawBack(ctx) {
   ctx.fillStyle = C.muted; ctx.font = 'italic 24px "Alegreya", serif'; ctx.textAlign = "left";
   ctx.fillText("Friends for international students at ITMO University.", 1506, 1290);
   ctx.fillText("A photo bingo walk across Veliky Novgorod.", 1506, 1322);
-  ctx.fillStyle = "rgba(107,97,88,.8)"; ctx.font = '15px "PT Sans Narrow", sans-serif'; ctx.textAlign = "right";
-  ctx.fillText("Stamp photo: Alexxx1979 / Wikimedia Commons, CC BY-SA 4.0", W - 70, H - 62);
 }
 
 /* ================= the 9:16 story ================= */
@@ -641,8 +645,6 @@ function drawStory(ctx, hot, lines) {
   ctx.fillStyle = C.cin; ctx.font = '700 27px "PT Sans Narrow", sans-serif'; spaced(ctx, "TAG US IN YOUR STORY", 276, ty + 46, 6);
   ctx.fillStyle = C.ink; ctx.font = '700 50px "PT Sans Narrow", sans-serif'; spaced(ctx, "BUDDY SYSTEM", 276, ty + 108, 5);
   seal(ctx, lines, 1218, ty + 66);
-  ctx.fillStyle = "rgba(107,97,88,.8)"; ctx.font = '17px "PT Sans Narrow", sans-serif'; ctx.textAlign = "center";
-  ctx.fillText("Photos via Wikimedia Commons: Alexxx1979, A.Savin, Lite, Aleksandr Sigachyov, Dar Veter, Ludvig14 (CC BY-SA)", W / 2, H - 100);
 }
 
 const canvas = document.getElementById("card"), backCanvas = document.getElementById("back");
@@ -660,8 +662,6 @@ function draw() {
     for (const [c, x] of [[pcCanvas, pctx], [canvas, ctx]]) {
       frame(...SIZES.get(c)); R = rng(1045); x.setTransform(S, 0, 0, S, 0, 0);
       background(x); leftPanel(x); lines = grid(x, hot); seal(x, lines);
-      x.fillStyle = "rgba(107,97,88,.8)"; x.font = '15px "PT Sans Narrow", sans-serif'; x.textAlign = "right";
-      x.fillText("Photos via Wikimedia Commons: Alexxx1979, A.Savin, Bahnfrend, Lite, Aleksandr Sigachyov, Dar Veter, Ludvig14, Vityavo (CC BY-SA / CC0)", W - 100, H - 92);
     }
     R = rng(1478); bctx.setTransform(S, 0, 0, S, 0, 0); drawBack(bctx);
     frame(1440, 2560); R = rng(988); sctx.setTransform(S, 0, 0, S, 0, 0); drawStory(sctx, hot, lines);
