@@ -1,9 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>
 <title>Veliky Novgorod Photo Bingo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ruslan+Display&family=Alegreya:ital,wght@0,400;0,700;1,400&family=Alegreya+SC:wght@700&family=PT+Sans+Narrow:wght@400;700&family=Caveat:wght@500;700&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: one landscape card drawn on canvas (what you see is what you save),
    controls and an accessible quest list beneath. Card palette: birch bark, iron-gall ink,
@@ -119,7 +117,7 @@ html.export .tabs { display: none }
 </div>
 
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
 <script>
 /* [title, hint, icon] — hints are mostly plain; the jokes live in a few hand-written notes */
 const TASKS = [
